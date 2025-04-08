@@ -21,13 +21,13 @@ function Header() {
           <li><Link to="/contact">Contact</Link></li>
           <li><Link to="/login">Login</Link></li>
         </ul>
-        <form onSubmit={handleSearch} className="flex space-x-2">
+        <form onSubmit={handleSearch} className="flex space-x-2 ">
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search..."
-            className="p-2 rounded-lg"
+            className="p-2 rounded-lg text-black"
           />
           <button type="submit" className="bg-white text-green-800 py-2 px-4 rounded-lg">Search</button>
         </form>

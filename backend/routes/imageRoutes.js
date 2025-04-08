@@ -1,30 +1,59 @@
-const express = require('express');
-const multer = require('multer');
-const { getProducts, createProduct, deleteProduct } = require('../controllers/imageController');
-const path = require('path');
+const Product = require('../models/product');
 const fs = require('fs');
+const path = require('path');
 
-const router = express.Router();
+const getProducts = async (req, res) => {
+  try {
+    const products = await Product.find();
+    res.json(products);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
-// Ensure uploads directory exists
-const uploadDir = path.join(__dirname, '../uploads');
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
+const createProduct = async (req, res) => {
+  const { name, description, category, material, availability } = req.body;
+  const image = req.file.filename; // Store only the filename
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-        cb(null, `${Date.now()}-${file.originalname}`);
+  const newProduct = new Product({
+    name,
+    description,
+    image,
+    category,
+    material,
+    availability
+  });
+
+  try {
+    const savedProduct = await newProduct.save();
+    res.status(201).json(savedProduct);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+const deleteProduct = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
     }
-});
 
-const upload = multer({ storage });
+    // Delete the image file from the uploads folder
+    const imagePath = path.join(__dirname, '..', 'uploads', product.image);
+    if (fs.existsSync(imagePath)) {
+      fs.unlinkSync(imagePath);
+    }
 
-router.get('/products', getProducts);
-router.post('/products', upload.single('image'), createProduct);
-router.delete('/products/:id', deleteProduct);
+    await product.remove();
+    res.json({ message: 'Product deleted' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
-module.exports = router;
+module.exports = {
+  getProducts,
+  createProduct,
+  deleteProduct
+};
